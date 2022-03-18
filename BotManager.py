@@ -5,6 +5,8 @@ import config
 
 #import subbot
 
+from database import get_conn, topics
+
 
 bot = telebot.TeleBot(config.manager_token)
 
@@ -38,10 +40,15 @@ def create_topic(message):
 	# Я плохо знаком с параллельными процессами в питоне, так что хз где заставить его отправлять сообщения сюда.
 	# Мб просто дать доступ sub ботам к БД и сделать на ней блокировку и не париться об этом
 
-	text = 'Новый топик создан (надо придумать, как передавать имя топика)'
-	bot.send_message(message.chat.id, text)
+    # Больше примеров использования в database.py
+    conn = get_conn()
+    ins = topics.insert().values(
+            header="Кто умеет делать бота?",  # TODO: Тут получите нормально название топика
+            manager=message.from_user.username)  # User.username is Optional field! Replace later
+    topic_id = conn.execute(ins).inserted_primary_key[0]
 
-
+    text = 'Новый топик создан (надо придумать, как передавать имя топика)'
+    bot.send_message(message.chat.id, text)
 
 
 if __name__ == '__main__':
