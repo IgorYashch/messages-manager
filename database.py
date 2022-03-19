@@ -52,15 +52,29 @@ class Database:
 
     @staticmethod
     def create_topic(name) -> string:
-        code = "".join(
-            random.choice(string.ascii_lowercase + string.digits) for _ in range(5)
-        )
+        #code = "".join(
+        #    random.choice(string.ascii_lowercase + string.digits) for _ in range(5)
+        #)
+        code = "sfu23"  # TODO
         with Session(engine) as session:
             topic = Topic(name=name, code=code)  # TODO: Retry if not unique
             session.add_all([topic])
             session.commit()
 
         return code
+
+    @staticmethod
+    def send_message(topic_code, message):
+        with Session(engine) as session:
+            stmt = select(Topic.name)  #.where(Topic.code == topic_code)  # TODO: search
+            topic_name = session.scalars(stmt).first()
+
+            message = Message(
+                    topic_name = topic_name,
+                    author = "user",
+                    message = message)
+            session.add_all([message])
+            session.commit()
 
     @staticmethod
     def get_messages(topic_name, n):

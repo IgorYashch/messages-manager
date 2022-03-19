@@ -143,9 +143,6 @@ def get_number_of_messages_rm(message, topic_name):
     try:
         num = int(message.text)
 
-        text = f"Здесь будет выведена информация о {num} сообщениях"
-        bot.send_message(message.chat.id, text)
-
         # Сбор информации из БД и их печать
         for m in database.get_messages(topic_name, num):
             bot.send_message(message.chat.id, m)
@@ -266,8 +263,8 @@ def read_message_and_save(message):
     msg_text = message.text
     id = message.chat.id
 
-    # YOUR CODE HERE
     # Запись этого сообщения в БД
+    database.send_message("Hack", msg_text)
 
     text = 'Ваше сообщение сохранено'
     bot.send_message(message.chat.id, text)
