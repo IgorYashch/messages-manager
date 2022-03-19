@@ -2,11 +2,11 @@ import telebot
 from telebot.types import BotCommand
 import config
 
-from database import get_conn, topics
+from database import Database
 
 bot = telebot.TeleBot(config.token)
 
-#database = None
+database = Database()
 
 #-------------------------------------------------------------------------------
 # Копим данные о том, кто есть кто
@@ -64,7 +64,7 @@ def get_secret_code(message):
 
 
     # Проверяем, что такой топик существует
-    elif True: #database.is_topic_code(code):
+    elif database.is_topic_code(code):
         add_to_users(message.chat.id)
 
         msg = bot.reply_to(message, f"""\
@@ -107,14 +107,15 @@ def create_topic(message):
 def read_topic_name_ct(message):
     topic_name = message.text
     
-    # YOUR CODE HERE
     # Проверка на существование темы и запись новой в БД
+    if not database.is_topic_name(topic_name):
+        new_secret_code = database.create_topic(topic_name)
+    else:
+        pass  # TODO: Retry
 
     text = f'Новая тема \"{topic_name}\" создана.\nСекретный пароль для нее:'
     msg = bot.send_message(message.chat.id, text)
 
-
-    new_secret_code = 'Bla-bla-bla' # YOUR CODE HERE
     bot.send_message(message.chat.id, new_secret_code)
 
 
@@ -130,22 +131,21 @@ def read_messages(message):
 def read_topic_name_rm(message):
     topic_name = message.text
     
-    # YOUR CODE HERE
     # Проверка на существование темы
+    if not database.is_topic_name(topic_name):
+        pass  # TODO: Retry
 
     text = f'Сколько последних сообщений вы хотите увидеть?'
     msg = bot.send_message(message.chat.id, text)
-    bot.register_next_step_handler(msg, get_number_of_messages_rm)
+    bot.register_next_step_handler(msg, get_number_of_messages_rm, topic_name)
 
-def get_number_of_messages_rm(message):
+def get_number_of_messages_rm(message, topic_name):
     try:
         num = int(message.text)
 
-        text = f"Здесь будет выведена информация о {num} сообщениях"
-        bot.send_message(message.chat.id, text)
-
-        # YOUR CODE HERE
         # Сбор информации из БД и их печать
+        for m in database.get_messages(topic_name, num):
+            bot.send_message(message.chat.id, m)
     except:
         text = "Это не число. Ошибка выполнения команды."
         bot.send_message(message.chat.id, text)
@@ -201,8 +201,10 @@ def topic_selection_handler(message):
 
 def read_topic_name_wtu(message):
     topic_name = message.text
-    # YOUR CODE HERE
+
     # Проверка на существование темы
+    if not database.is_topic_name(topic_name):
+        pass  # TODO: Retry
 
     text = 'Введите id пользователя, которому хотите отправить сообщение:'
     # id пользователей должен выводиться при выводе списка сообщений
@@ -261,8 +263,8 @@ def read_message_and_save(message):
     msg_text = message.text
     id = message.chat.id
 
-    # YOUR CODE HERE
     # Запись этого сообщения в БД
+    database.send_message("Hack", msg_text)
 
     text = 'Ваше сообщение сохранено'
     bot.send_message(message.chat.id, text)
