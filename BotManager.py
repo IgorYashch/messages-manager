@@ -1,4 +1,5 @@
 import telebot
+from telebot.types import BotCommand
 import config
 
 from database import get_conn, topics
@@ -60,6 +61,7 @@ def get_secret_code(message):
 Добрый день, мистер менеджер!
 Вы можете узнать о доступных вам командах, написав /help
 """)
+
 
     # Проверяем, что такой топик существует
     elif True: #database.is_topic_code(code):
@@ -148,19 +150,57 @@ def get_number_of_messages_rm(message):
         text = "Это не число. Ошибка выполнения команды."
         bot.send_message(message.chat.id, text)
 
-
-
+# надо это куда то завернуть по хорошему
+borders = [0, 3]
 
 # отправка сообщения конкретному пользователю
 @bot.message_handler(commands=['write_to_user'], func=is_managers_message)
 def write_to_user(message):
+    def small_list_of_topics(list_of_topics, borders):
+        if len(list_of_topics) - 1 < borders[1]:
+            small_list = list_of_topics[borders[0]:]
+            right = False
+        else:
+            small_list = list_of_topics[borders[0]:borders[1]]
+            right = True
+        left = True if borders[0] != 0 else False
+        return small_list, left, right
+
+    #list_of_topics = database.get_list_of_topics() #todo
+    list_of_topics = ['Тема1', 'Тема2', 'Тема3', 'Тема4', 'Тема5', 'Тема6', 'Тема7', 'Тема8', 'Тема9', 'Тема10']
+
+    # (True, True) оптимизируют размер иконок и делают клавиатуру одноразовой
+    user_markup = telebot.types.ReplyKeyboardMarkup(True, True)
+    if len(list_of_topics) <= borders[1] - borders[0]:
+        for topic in list_of_topics:
+            user_markup.row(topic)
+    else:
+        small_list, left, right = small_list_of_topics(list_of_topics, borders)
+        if left:
+            user_markup.row('Предыдущие темы...')
+        for topic in small_list:
+            user_markup.row(topic)
+        if right:
+            user_markup.row('Следующие темы...')
+
     text = f'Введите тему, про которую пойдет речь:'
-    msg = bot.send_message(message.chat.id, text)
-    bot.register_next_step_handler(msg, read_topic_name_wtu)
+    msg = bot.send_message(message.chat.id, text, reply_markup=user_markup)
+    bot.register_next_step_handler(msg, topic_selection_handler)
+
+def topic_selection_handler(message):
+    if message.text == 'Предыдущие темы...':
+        borders[0] -= len(borders)
+        borders[1] -= len(borders)
+        write_to_user(message)
+    elif message.text == 'Следующие темы...':
+        borders[0] += len(borders)
+        borders[1] += len(borders)
+        write_to_user(message)
+    else:
+        read_topic_name_wtu(message)
 
 def read_topic_name_wtu(message):
     topic_name = message.text
-    
     # YOUR CODE HERE
     # Проверка на существование темы
 
@@ -261,3 +301,4 @@ def bad_message(message):
 
 if __name__ == '__main__':
     bot.polling(none_stop=True, interval=0)
+
