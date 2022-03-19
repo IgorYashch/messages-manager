@@ -42,7 +42,7 @@ def get_started(message):
     text = '''
 Привет!
 Это бот для управления сообщениями на различные темы.
-Введи, пожалуйста секретный код темы
+Введи, пожалуйста, секретный код темы
 '''
     msg = bot.send_message(message.chat.id, text)
 
@@ -207,9 +207,9 @@ def exit_session(message):
 #-------------------------------------------------------------------------------
 
 # завершение сессии менеджера
-@bot.message_handler(commands=['exit'], func=is_managers_message)
+@bot.message_handler(commands=['exit'], func=is_users_message)
 def exit_session(message):
-    delete_from_managers(message.chat.id)
+    delete_from_users(message.chat.id)
 
     text = 'До свидания!\nДля начала новой сессии напишите /start'
     bot.send_message(message.chat.id, text)
@@ -224,7 +224,7 @@ def read_message_and_save(message):
     # YOUR CODE HERE
     # Запись этого сообщения в БД
 
-    text = 'Выше сообщение сохранено'
+    text = 'Ваше сообщение сохранено'
     bot.send_message(message.chat.id, text)
 
 
