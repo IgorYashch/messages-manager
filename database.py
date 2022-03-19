@@ -20,7 +20,6 @@ class Topic(Base):
     __tablename__ = "topic"
 
     name = Column(String, primary_key=True)
-    code = Column(String, unique=True)
 
 
 class Message(Base):
@@ -39,42 +38,31 @@ if not database_exists(engine.url):
 
 class Database:
     @staticmethod
-    def is_topic_code(code):
-        with Session(engine) as session:
-            stmt = select(Topic).where(Topic.code == code)
-            return session.scalars(stmt).first() is not None
-
-    @staticmethod
-    def is_topic_name(name):
+    def is_topic(name):
         with Session(engine) as session:
             stmt = select(Topic).where(Topic.name == name)
             return session.scalars(stmt).first() is not None
 
     @staticmethod
-    def create_topic(name) -> string:
-        #code = "".join(
-        #    random.choice(string.ascii_lowercase + string.digits) for _ in range(5)
-        #)
-        code = "sfu23"  # TODO
+    def create_topic(name):
         with Session(engine) as session:
-            topic = Topic(name=name, code=code)  # TODO: Retry if not unique
-            session.add_all([topic])
+            session.add(Topic(name=name))
             session.commit()
-
-        return code
 
     @staticmethod
-    def send_message(topic_code, message):
+    def send_message(name, author, message):
         with Session(engine) as session:
-            stmt = select(Topic.name)  #.where(Topic.code == topic_code)  # TODO: search
-            topic_name = session.scalars(stmt).first()
-
-            message = Message(
-                    topic_name = topic_name,
-                    author = "user",
-                    message = message)
-            session.add_all([message])
+            session.add(Message(
+                    topic_name=name,
+                    author=author,
+                    message=message))
             session.commit()
+
+    @staticmethod
+    def has_user(user):
+        with Session(engine) as session:
+            stmt = select(Message.author).where(Message.author == user)
+            return session.scalars(stmt).first() is not None
 
     @staticmethod
     def get_messages(topic_name, n):

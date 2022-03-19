@@ -43,7 +43,7 @@ def get_started(message):
     text = '''
 Привет!
 Это бот для управления сообщениями на различные темы.
-Введи, пожалуйста, секретный код темы
+Введите название темы
 '''
     msg = bot.send_message(message.chat.id, text)
 
@@ -64,16 +64,19 @@ def get_secret_code(message):
 
 
     # Проверяем, что такой топик существует
-    elif database.is_topic_code(code):
+    elif database.is_topic(code):
         add_to_users(message.chat.id)
 
         msg = bot.reply_to(message, f"""\
-Добро пожаловать в тему \"{"Имя топика"}\"!
+Добро пожаловать в тему \"{code}\"!
 Все ваши сообщения будут записаны!
 Вы всегда можете выйти из топика, используя команду /exit.
 При этом вы получите ответ на свое сообщение,\
 даже если будете находиться в другом топике.
 """)
+
+    else:
+        bot.reply_to(message, "Тема не существует")
 
 
 
@@ -108,15 +111,11 @@ def read_topic_name_ct(message):
     topic_name = message.text
     
     # Проверка на существование темы и запись новой в БД
-    if not database.is_topic_name(topic_name):
-        new_secret_code = database.create_topic(topic_name)
+    if not database.is_topic(topic_name):
+        database.create_topic(topic_name)
+        text = f'Тема \"{topic_name}\" успешно создана.'
     else:
-        pass  # TODO: Retry
-
-    text = f'Новая тема \"{topic_name}\" создана.\nСекретный пароль для нее:'
-    msg = bot.send_message(message.chat.id, text)
-
-    bot.send_message(message.chat.id, new_secret_code)
+        text = f'Тема \"{topic_name}\" уже существует.'
 
 
 
@@ -132,8 +131,10 @@ def read_topic_name_rm(message):
     topic_name = message.text
     
     # Проверка на существование темы
-    if not database.is_topic_name(topic_name):
-        pass  # TODO: Retry
+    if not database.is_topic(topic_name):
+        text = "Такой темы не существует"
+        bot.send_message(message.chat.id, text)
+        return
 
     text = f'Сколько последних сообщений вы хотите увидеть?'
     msg = bot.send_message(message.chat.id, text)
@@ -203,8 +204,10 @@ def read_topic_name_wtu(message):
     topic_name = message.text
 
     # Проверка на существование темы
-    if not database.is_topic_name(topic_name):
-        pass  # TODO: Retry
+    if not database.is_topic(topic_name):
+        text = "Такой темы не существует"
+        bot.send_message(message.chat.id, text)
+        return
 
     text = 'Введите id пользователя, которому хотите отправить сообщение:'
     # id пользователей должен выводиться при выводе списка сообщений
@@ -214,10 +217,13 @@ def read_topic_name_wtu(message):
 def read_users_login_wtu(message, topic_name):
     id = message.text
     
-    # YOUR CODE HERE
     # Проверка на существование пользователя
+    if not database.has_user(id):
+        text = "Этот пользователь не оставлял сообщений"
+        bot.send_message(message.chat.id, text)
+        return
 
-    text = 'Введите само сообщение:'
+    text = 'Введите сообщение:'
     msg = bot.send_message(message.chat.id, text)
     bot.register_next_step_handler(msg, read_message_wtu, topic_name, id)
 
@@ -264,10 +270,8 @@ def read_message_and_save(message):
     id = message.chat.id
 
     # Запись этого сообщения в БД
-    database.send_message("Hack", msg_text)
-
-    text = 'Ваше сообщение сохранено'
-    bot.send_message(message.chat.id, text)
+    topic_name = "Test Topic"  # TODO: Получить topic_name
+    database.send_message(topic_name, id, msg_text)
 
 
 #-------------------------------------------------------------------------------
