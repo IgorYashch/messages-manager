@@ -4,6 +4,7 @@ import config
 
 from database import Database
 
+
 bot = telebot.TeleBot(config.token)
 
 database = Database()
@@ -49,6 +50,14 @@ def get_started(message):
 
     if message.chat.id == config.manager_id:
         add_to_managers(message.chat.id)
+
+        command = [BotCommand(command='help', description='Помощь'),
+                   BotCommand(command='create_topic', description='Создать тему'),
+                   BotCommand(command='read_messages', description='Прочитать сообщение из темы'),
+                   BotCommand(command='write_to_user', description='Написать пользователю'),
+                   BotCommand(command='exit', description='Выход')]
+        bot.set_my_commands(command)
+
         msg = bot.reply_to(message, """\
 Добрый день, мистер менеджер!
 Вы можете узнать о доступных вам командах, написав /help
@@ -128,9 +137,26 @@ def read_topic_name_ct(message):
 # получение последних сообщений
 @bot.message_handler(commands=['read_messages'], func=is_managers_message)
 def read_messages(message):
-    text = "Введите название темы:"
-    msg = bot.send_message(message.chat.id, text)
-    bot.register_next_step_handler(msg, read_topic_name_rm)
+    list_of_topics = database.get_list_of_topics()
+
+    # (True, True) оптимизируют размер иконок и делают клавиатуру одноразовой
+    user_markup = telebot.types.ReplyKeyboardMarkup(True, True)
+    if len(list_of_topics) <= borders[1] - borders[0]:
+        for topic in list_of_topics:
+            user_markup.row(topic)
+    else:
+        small_list, left, right = small_list_of_topics(list_of_topics, borders)
+        if left:
+            user_markup.row('Предыдущие темы...')
+        for topic in small_list:
+            user_markup.row(topic)
+        if right:
+            user_markup.row('Следующие темы...')
+
+    text = "Выберете тему:"
+    msg = bot.send_message(message.chat.id, text, reply_markup=user_markup)
+    bot.register_next_step_handler(msg, topic_selection_handler, read_topic_name_rm, read_messages)
+
 
 def read_topic_name_rm(message):
     topic_name = message.text
@@ -148,18 +174,19 @@ def read_topic_name_rm(message):
 # надо это куда то завернуть по хорошему
 borders = [0, 3]
 
+def small_list_of_topics(list_of_topics, borders):
+    if len(list_of_topics) - 1 < borders[1]:
+        small_list = list_of_topics[borders[0]:]
+        right = False
+    else:
+        small_list = list_of_topics[borders[0]:borders[1]]
+        right = True
+    left = True if borders[0] != 0 else False
+    return small_list, left, right
+
 # отправка сообщения конкретному пользователю
 @bot.message_handler(commands=['write_to_user'], func=is_managers_message)
 def write_to_user(message):
-    def small_list_of_topics(list_of_topics, borders):
-        if len(list_of_topics) - 1 < borders[1]:
-            small_list = list_of_topics[borders[0]:]
-            right = False
-        else:
-            small_list = list_of_topics[borders[0]:borders[1]]
-            right = True
-        left = True if borders[0] != 0 else False
-        return small_list, left, right
 
     list_of_topics = database.get_list_of_topics()
 
@@ -179,19 +206,21 @@ def write_to_user(message):
 
     text = f'Введите тему, про которую пойдет речь:'
     msg = bot.send_message(message.chat.id, text, reply_markup=user_markup)
-    bot.register_next_step_handler(msg, topic_selection_handler)
+    bot.register_next_step_handler(msg, topic_selection_handler, read_topic_name_wtu, write_to_user)
+    # bot.handler_after_selection = read_topic_name_wtu
+    # bot.handler_selection = write_to_user
 
-def topic_selection_handler(message):
+def topic_selection_handler(message, handler_after_selection, handler_selection):
     if message.text == 'Предыдущие темы...':
         borders[0] -= len(borders)
         borders[1] -= len(borders)
-        write_to_user(message)
+        handler_selection(message)
     elif message.text == 'Следующие темы...':
         borders[0] += len(borders)
         borders[1] += len(borders)
-        write_to_user(message)
+        handler_selection(message)
     else:
-        read_topic_name_wtu(message)
+        handler_after_selection(message)
 
 def read_topic_name_wtu(message):
     topic_name = message.text
@@ -300,4 +329,3 @@ def bad_message(message):
 
 if __name__ == '__main__':
     bot.polling(none_stop=True, interval=0)
-
