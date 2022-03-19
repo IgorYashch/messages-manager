@@ -3,7 +3,7 @@ import config
 
 from database import get_conn, topics
 
-bot = telebot.TeleBot(config.manager_token)
+bot = telebot.TeleBot(config.token)
 
 #database = None
 

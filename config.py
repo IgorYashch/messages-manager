@@ -1,4 +1,4 @@
-manager_token = "5234704497:AAE6oUCuL52vdQGa0SOU73r7otbtCAnWBdo"
+token = "5234704497:AAE6oUCuL52vdQGa0SOU73r7otbtCAnWBdo"
 
 manager_code = "qwerty"
 
