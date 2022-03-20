@@ -141,20 +141,9 @@ def read_topic_name_rm(message):
         bot.send_message(message.chat.id, text)
         return
 
-    text = f'Сколько последних сообщений вы хотите увидеть?'
-    msg = bot.send_message(message.chat.id, text)
-    bot.register_next_step_handler(msg, get_number_of_messages_rm, topic_name)
+    for m in database.get_unread_messages(topic_name):
+        bot.send_message(message.chat.id, m)
 
-def get_number_of_messages_rm(message, topic_name):
-    try:
-        num = int(message.text)
-
-        # Сбор информации из БД и их печать
-        for m in database.get_unread_messages(topic_name):
-            bot.send_message(message.chat.id, m)
-    except:
-        text = "Это не число. Ошибка выполнения команды."
-        bot.send_message(message.chat.id, text)
 
 # надо это куда то завернуть по хорошему
 borders = [0, 3]
@@ -172,8 +161,7 @@ def write_to_user(message):
         left = True if borders[0] != 0 else False
         return small_list, left, right
 
-    #list_of_topics = database.get_list_of_topics() #todo
-    list_of_topics = ['Тема1', 'Тема2', 'Тема3', 'Тема4', 'Тема5', 'Тема6', 'Тема7', 'Тема8', 'Тема9', 'Тема10']
+    list_of_topics = database.get_list_of_topics()
 
     # (True, True) оптимизируют размер иконок и делают клавиатуру одноразовой
     user_markup = telebot.types.ReplyKeyboardMarkup(True, True)
@@ -276,7 +264,6 @@ def read_message_and_save(message):
 
     # Запись этого сообщения в БД
     topic_name = get_users_topic_name(id)
-    # topic_name = "Test Topic"  # TODO: Получить topic_name
     database.send_message(topic_name, id, msg_text)
 
 
