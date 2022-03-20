@@ -32,6 +32,14 @@ class Message(Base):
     message = Column(String)
 
 
+class Replie(Base):
+    __tablename__ = "replie"
+
+    id = Column(Integer, primary_key=True)
+    to = Column(String)
+    message = Column(String)
+
+
 engine = create_engine("sqlite:///BotManager.db")
 if not database_exists(engine.url):
     Base.metadata.create_all(engine)
@@ -79,5 +87,19 @@ class Database:
             if messages:
                 session.query(Topic).filter(Topic.name == topic_name).update({'last_read': messages[-1].id})
                 session.commit()
+
+            return [message.message for message in messages]
+
+    @staticmethod
+    def reply_to(replied_message, new_message):
+        with Session(engine) as session:
+            author = session.query(Message.author).filter(Message.message == replied_message).first()[0]
+            session.add(Replie(to=author, message=new_message))
+            session.commit()
+
+    @staticmethod
+    def get_replies(id):
+        with Session(engine) as session:
+            messages = session.query(Replie.message).filter(Replie.to == id).all()
 
             return [message.message for message in messages]

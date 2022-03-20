@@ -67,6 +67,11 @@ def get_started(message):
 Введите название темы:
 '''
         msg = bot.send_message(message.chat.id, text)
+
+        bot.send_message(message.chat.id, "Вам сообщение:")
+        for m in database.get_replies(message.chat.id):
+            bot.send_message(message.chat.id, m)
+
         bot.register_next_step_handler(message, get_topic_name)
 
 
@@ -315,6 +320,12 @@ def read_message_and_save(message):
 #-------------------------------------------------------------------------------
 # ОСТАВШИЕСЯ ВАРИАНТЫ ИСКЛЮЧЕНИЯ
 #-------------------------------------------------------------------------------
+
+@bot.message_handler(func=is_managers_message)
+def reply_to(message):
+    replied_message = message.reply_to_message.text
+
+    database.reply_to(replied_message, message.text)
 
 # Ошибка при запущенном режиме юзера/менеджера
 @bot.message_handler(func=is_users_message)
