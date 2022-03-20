@@ -13,25 +13,30 @@ database = Database()
 #-------------------------------------------------------------------------------
 
 managers_ids = set()
-users_ids = set()
+users_ids = dict()
 
 def is_managers_message(message):
     return message.chat.id in managers_ids
 
-def is_users_message(message):
-    return message.chat.id in users_ids
-
 def add_to_managers(id):
     managers_ids.add(id)
-
-def add_to_users(id):
-    users_ids.add(id)
 
 def delete_from_managers(id):
     managers_ids.discard(id)
 
+
+
+def is_users_message(message):
+    return message.chat.id in users_ids
+
+def add_to_users(id, topic_name):
+    users_ids[id] = topic_name
+
 def delete_from_users(id):
-    users_ids.discard(id)
+    del users_ids[id]
+
+def get_users_topic_name(id):
+    return users_ids[id]
     
 #-------------------------------------------------------------------------------
 # Начало работы
@@ -52,9 +57,9 @@ def get_started(message):
 
 # узнаем, менеджер этот пользователь или юзер
 def get_secret_code(message):
-    code = message.text
+    topic_name = message.text
 
-    if code == config.manager_code:
+    if topic_name == config.manager_code:
         add_to_managers(message.chat.id)
 
         msg = bot.reply_to(message, """\
@@ -64,11 +69,11 @@ def get_secret_code(message):
 
 
     # Проверяем, что такой топик существует
-    elif database.is_topic(code):
-        add_to_users(message.chat.id)
+    elif database.is_topic(topic_name):
+        add_to_users(message.chat.id, topic_name)
 
         msg = bot.reply_to(message, f"""\
-Добро пожаловать в тему \"{code}\"!
+Добро пожаловать в тему \"{topic_name}\"!
 Все ваши сообщения будут записаны!
 Вы всегда можете выйти из топика, используя команду /exit.
 При этом вы получите ответ на свое сообщение,\
@@ -116,6 +121,7 @@ def read_topic_name_ct(message):
         text = f'Тема \"{topic_name}\" успешно создана.'
     else:
         text = f'Тема \"{topic_name}\" уже существует.'
+    bot.send_message(message.chat.id, text)
 
 
 
@@ -270,7 +276,8 @@ def read_message_and_save(message):
     id = message.chat.id
 
     # Запись этого сообщения в БД
-    topic_name = "Test Topic"  # TODO: Получить topic_name
+    topic_name = get_users_topic_name(id)
+    # topic_name = "Test Topic"  # TODO: Получить topic_name
     database.send_message(topic_name, id, msg_text)
 
 
