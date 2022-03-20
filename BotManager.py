@@ -151,7 +151,7 @@ def get_number_of_messages_rm(message, topic_name):
         num = int(message.text)
 
         # Сбор информации из БД и их печать
-        for m in database.get_messages(topic_name, num):
+        for m in database.get_unread_messages(topic_name):
             bot.send_message(message.chat.id, m)
     except:
         text = "Это не число. Ошибка выполнения команды."
