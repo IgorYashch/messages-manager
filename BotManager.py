@@ -52,7 +52,7 @@ def get_started(message):
         command = [BotCommand(command='help', description='Помощь'),
                    BotCommand(command='create_topic', description='Создать тему'),
                    BotCommand(command='read_messages', description='Прочитать сообщение из темы'),
-                   BotCommand(command='write_to_user', description='Написать пользователю'),
+                   BotCommand(command='add_manager', description='Повысить до менеджера'),
                    BotCommand(command='exit', description='Выход')]
         bot.set_my_commands(command)
 
