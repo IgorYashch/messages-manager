@@ -68,11 +68,11 @@ def get_started(message):
 '''
         msg = bot.send_message(message.chat.id, text)
 
-        messages = database.get_replies(message.chat.id)
-        if messages:
-            bot.send_message(message.chat.id, "Вам сообщение из топика")
-            for m in messages:
-                bot.send_message(message.chat.id, m)
+        # messages = database.get_replies(message.chat.id)
+        # if messages:
+        #     bot.send_message(message.chat.id, "Вам сообщение из топика")
+        #     for m in messages:
+        #         bot.send_message(message.chat.id, m)
 
         bot.register_next_step_handler(message, get_topic_name)
 
@@ -335,9 +335,27 @@ def read_message_and_save(message):
 
 @bot.message_handler(func=is_managers_message)
 def reply_to(message):
-    replied_message = message.reply_to_message.text
+    replied_message = message.reply_to_message
 
-    database.reply_to(replied_message, message.text)
+    if replied_message:
+        user_id = database.get_user_id_for_message(replied_message.text)
+        topic_name = database.get_topic_name_for_message(replied_message.text)
+
+        bot.send_message(user_id, "Вам пришел новый ответ:")
+        text = replied_message.text
+        answer = message.text
+
+        answer = f"""Тема: \"{topic_name}\"
+
+Ваше сообщение: 
+\"{text}\"
+
+Ответ: 
+\"{answer}\"
+"""
+        bot.send_message(user_id, answer)
+    else:
+        bad_message(message)
 
 # Ошибка при запущенном режиме юзера/менеджера
 @bot.message_handler(func=is_users_message)

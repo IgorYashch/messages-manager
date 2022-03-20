@@ -90,16 +90,30 @@ class Database:
 
             return [message.message for message in messages]
 
-    @staticmethod
-    def reply_to(replied_message, new_message):
-        with Session(engine) as session:
-            author = session.query(Message.author).filter(Message.message == replied_message).first()[0]
-            session.add(Replie(to=author, message=new_message))
-            session.commit()
+    # @staticmethod
+    # def reply_to(replied_message, new_message):
+    #     with Session(engine) as session:
+    #         author = session.query(Message.author).filter(Message.message == replied_message).first()[0]
+    #         session.add(Replie(to=author, message=new_message))
+    #         session.commit()
+    #         return author
+
+    # @staticmethod
+    # def get_replies(id):
+    #     with Session(engine) as session:
+    #         messages = session.query(Replie.message).filter(Replie.to == id).all()
+
+    #         return [message.message for message in messages]
+
 
     @staticmethod
-    def get_replies(id):
+    def get_user_id_for_message(replied_message):
         with Session(engine) as session:
-            messages = session.query(Replie.message).filter(Replie.to == id).all()
+            author_id = session.query(Message.author).filter(Message.message == replied_message).first()[0]
+            return author_id
 
-            return [message.message for message in messages]
+    @staticmethod
+    def get_topic_name_for_message(replied_message):
+        with Session(engine) as session:
+            topic_name = session.query(Message.topic_name).filter(Message.message == replied_message).first()[0]
+            return topic_name
