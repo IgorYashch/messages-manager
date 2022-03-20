@@ -45,31 +45,30 @@ def get_users_topic_name(id):
 # Приветствие
 @bot.message_handler(commands=['start'])
 def get_started(message):
-    text = '''
-Привет!
-Это бот для управления сообщениями на различные темы.
-Введите название темы
-'''
-    msg = bot.send_message(message.chat.id, text)
-
-    bot.register_next_step_handler(message, get_secret_code)
 
 
-# узнаем, менеджер этот пользователь или юзер
-def get_secret_code(message):
-    topic_name = message.text
-
-    if topic_name == config.manager_code:
+    if message.chat.id == config.manager_id:
         add_to_managers(message.chat.id)
-
         msg = bot.reply_to(message, """\
 Добрый день, мистер менеджер!
 Вы можете узнать о доступных вам командах, написав /help
 """)
+    else:
+        text = '''
+Привет!
+Это бот для управления сообщениями на различные темы.
+Введите название темы:
+'''
+        msg = bot.send_message(message.chat.id, text)
+        bot.register_next_step_handler(message, get_topic_name)
 
+
+# узнаем, менеджер этот пользователь или юзер
+def get_topic_name(message):
+    topic_name = message.text
 
     # Проверяем, что такой топик существует
-    elif database.is_topic(topic_name):
+    if database.is_topic(topic_name):
         add_to_users(message.chat.id, topic_name)
 
         msg = bot.reply_to(message, f"""\
