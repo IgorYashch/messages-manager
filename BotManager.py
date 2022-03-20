@@ -1,11 +1,11 @@
 import telebot
 from telebot.types import BotCommand
-import config
-
 from database import Database
 
+TOKEN = "5234704497:AAE6oUCuL52vdQGa0SOU73r7otbtCAnWBdo"
+FIRST_MANAGER_USERNAME = "egorchistov"
 
-bot = telebot.TeleBot(config.token)
+bot = telebot.TeleBot(TOKEN)
 
 database = Database()
 
@@ -13,11 +13,13 @@ database = Database()
 # Копим данные о том, кто есть кто
 #-------------------------------------------------------------------------------
 
-managers_ids = set()
+managers_ids = set([FIRST_MANAGER_USERNAME])
 users_ids = dict()
 
 def is_managers_message(message):
-    return message.chat.id in managers_ids
+    print(message.from_user.username)
+    print(managers_ids)
+    return message.from_user.username in managers_ids
 
 def add_to_managers(id):
     managers_ids.add(id)
@@ -46,11 +48,7 @@ def get_users_topic_name(id):
 # Приветствие
 @bot.message_handler(commands=['start'])
 def get_started(message):
-
-
-    if message.chat.id == config.manager_id:
-        add_to_managers(message.chat.id)
-
+    if is_managers_message(message):
         command = [BotCommand(command='help', description='Помощь'),
                    BotCommand(command='create_topic', description='Создать тему'),
                    BotCommand(command='read_messages', description='Прочитать сообщение из темы'),
@@ -108,6 +106,7 @@ def send_help(message):
 /read_messages
 /write_to_user
 /exit
+/add_manager
 """
     bot.send_message(message.chat.id, text)
 
@@ -265,12 +264,29 @@ def read_message_wtu(message, topic_name, id):
 # завершение сессии менеджера
 @bot.message_handler(commands=['exit'], func=is_managers_message)
 def exit_session(message):
-    delete_from_managers(message.chat.id)
+    if message.from_user.username == FIRST_MANAGER_USERNAME:
+        text = 'Простите, но вы не можете уйти, вы главный менеджер'
+    else:
 
-    text = 'До свидания!\nДля начала новой сессии напишите /start'
+        delete_from_managers(message.from_user.username)
+
+        text = 'До свидания!\nДля начала новой сессии напишите /start'
     bot.send_message(message.chat.id, text)
 
 
+
+
+# добавление нового месенжера
+@bot.message_handler(commands=['add_manager'], func=is_managers_message)
+def add_manager(message):
+    text = 'Введите username нового менеджера'
+    msg = bot.send_message(message.chat.id, text)
+    bot.register_next_step_handler(msg, read_manager_name)
+
+def read_manager_name(message):
+    add_to_managers(message.text)
+    text = 'Новый менеджер добавлен!'
+    msg = bot.send_message(message.chat.id, text)
 
 #-------------------------------------------------------------------------------
 # ОБРАБОТЧИКИ ДЛЯ ЮЗЕРА
