@@ -68,9 +68,11 @@ def get_started(message):
 '''
         msg = bot.send_message(message.chat.id, text)
 
-        bot.send_message(message.chat.id, "Вам сообщение:")
-        for m in database.get_replies(message.chat.id):
-            bot.send_message(message.chat.id, m)
+        messages = database.get_replies(message.chat.id)
+        if messages:
+            bot.send_message(message.chat.id, "Вам сообщение из топика")
+            for m in messages:
+                bot.send_message(message.chat.id, m)
 
         bot.register_next_step_handler(message, get_topic_name)
 
@@ -109,7 +111,6 @@ def send_help(message):
 /help
 /create_topic
 /read_messages
-/write_to_user
 /exit
 /add_manager
 """
@@ -296,6 +297,17 @@ def read_manager_name(message):
 #-------------------------------------------------------------------------------
 # ОБРАБОТЧИКИ ДЛЯ ЮЗЕРА
 #-------------------------------------------------------------------------------
+
+# вывод справочной информации
+@bot.message_handler(commands=['help'], func=is_users_message)
+def send_help(message):
+    text="""
+Доступные команды:
+/help
+/exit
+"""
+    bot.send_message(message.chat.id, text)
+
 
 # завершение сессии менеджера
 @bot.message_handler(commands=['exit'], func=is_users_message)
