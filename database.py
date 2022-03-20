@@ -20,6 +20,7 @@ class Topic(Base):
     __tablename__ = "topic"
 
     name = Column(String, primary_key=True)
+    last_read = Column(Integer)
 
 
 class Message(Base):
@@ -46,8 +47,13 @@ class Database:
     @staticmethod
     def create_topic(name):
         with Session(engine) as session:
-            session.add(Topic(name=name))
+            session.add(Topic(name=name, last_read=-1))
             session.commit()
+
+    @staticmethod
+    def get_list_of_topics():
+        with Session(engine) as session:
+            return [topic[0] for topic in session.query(Topic.name).all()]
 
     @staticmethod
     def send_message(name, author, message):
@@ -65,7 +71,13 @@ class Database:
             return session.scalars(stmt).first() is not None
 
     @staticmethod
-    def get_messages(topic_name, n):
+    def get_unread_messages(topic_name):
         with Session(engine) as session:
-            stmt = select(Message).where(Message.topic_name == topic_name)
-            return [message.message for message in session.scalars(stmt)]
+            last_read = session.query(Topic.last_read).filter(Topic.name == topic_name).first()[0]
+            messages = session.query(Message).filter((Message.topic_name == topic_name) & (Message.id > last_read)).all()
+
+            if messages:
+                session.query(Topic).filter(Topic.name == topic_name).update({'last_read': messages[-1].id})
+                session.commit()
+
+            return [message.message for message in messages]
